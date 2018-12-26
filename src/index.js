@@ -3,17 +3,58 @@ import {GraphQLServer} from 'graphql-yoga'
 const posts=[{
     id:'1',
     name:'post1',
-    topic:'topic1'   
+    topic:'topic1',
+    author:'1' 
 },
 {
     id:'2',
     name:'post2',
-    topic:'topic2'   
+    topic:'topic2',
+    author:'3'  
 },
 {
     id:'3',
     name:'post3',
-    topic:'topic3'   
+    topic:'topic3',
+    author:'1'    
+}]
+
+const users=[{
+    id:'1',
+    name:'user1'
+},
+{
+    id:'2',
+    name:'user2'     
+},
+{
+    id:'3',
+    name:'user3'
+}]
+
+const comments=[{
+    id:'1',
+    text:'comment1',
+    author:'1',
+    post:'1'
+},
+{
+    id:'2',
+    text:'comment2',
+    author:'2',
+    post:'3'
+},
+{
+    id:'3',
+    text:'comment3',
+    author:'2',
+    post:'3'
+},
+{
+    id:'4',
+    text:'comment4',
+    author:'2',
+    post:'2'
 }]
 
 const typeDefs=`
@@ -22,7 +63,9 @@ const typeDefs=`
         arr:[Int!]!,
         add(numbers:[Float!]):Int!
         me:User!,
+        users:[User!]!,
         post:Post!,
+        comments:[Comment!]!,
         posts(query:String!):[Post!]!
     }
 
@@ -30,15 +73,23 @@ const typeDefs=`
         id: ID!,
         name:String!,
         age:Int!,
-        employed:Boolean!,
-        gpa:Float
+        posts:[Post!]!,
+        comments:[Comment!]!
     }
 
     type Post{
         id:ID!,
         name:String!,
-        category:String!,
-        date:String!
+        topic:String!,
+        author:User!,
+        comments:[Comment!]!
+    }
+
+    type Comment{
+        id: ID!,
+        text:String!,
+        author:User!,
+        post:Post!
     }
 `
 
@@ -51,6 +102,9 @@ const resolvers={
             else{
                 return 'hello'
             }
+        },
+        users(parent,args,ctx,info){
+            return users
         },
         arr(){
             return [1,2,3]
@@ -65,6 +119,9 @@ const resolvers={
                     return namematch||topicmatch
                 })
             }
+        },
+        comments(parent,args,ctx,info){
+           return comments
         },
         add(parent,args,ctx,info){
             if(args.numbers.length===0)
@@ -91,9 +148,45 @@ const resolvers={
             return{
                 id:'234',
                 name:'How to GraphQL',
-                category:'tech',
-                date:'today'
+                topic:'topic'
             }
+        }
+    },
+    Post:{
+        author(parent,args,ctx,info){
+            return users.find((user)=>{
+                return user.id==parent.author
+            })
+        },
+        comments(parent,args,ctx,info){
+            return comments.filter((comment)=>{
+                return parent.id===comment.post
+            })
+        }
+    },
+    Comment:{
+        author(parent,args,ctx,info){
+            return users.find((user)=>{
+                return user.id==parent.author
+            })
+        },
+        post(parent,args,ctx,info){
+            return posts.find((post)=>{
+                return post.id==parent.post
+            })
+        }
+
+    },
+    User:{
+        posts(parent,args,ctx,info){
+            return posts.filter((post)=>{
+                return parent.id===post.author
+            })
+        },
+        comments(parent,args,ctx,info){
+            return comments.filter((comment)=>{
+                return parent.id===comment.author
+            })
         }
     }
 }
