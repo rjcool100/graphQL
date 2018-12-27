@@ -139,7 +139,7 @@ const resolvers={
             return {
                 id:'123',
                 name:'rohit',
-                age:27,
+                age:26,
                 employed:false,
                 gpa:null
             }
