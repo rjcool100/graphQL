@@ -1,4 +1,5 @@
 import {GraphQLServer} from 'graphql-yoga'
+import uuidv4 from 'uuid/v4'
 
 const posts=[{
     id:'1',
@@ -21,15 +22,18 @@ const posts=[{
 
 const users=[{
     id:'1',
-    name:'user1'
+    name:'user1',
+    email:'user1@gmail.com'
 },
 {
     id:'2',
-    name:'user2'     
+    name:'user2',
+    email:'user2@gmail.com'   
 },
 {
     id:'3',
-    name:'user3'
+    name:'user3',
+    email:'user3@gmail.com'
 }]
 
 const comments=[{
@@ -69,9 +73,16 @@ const typeDefs=`
         posts(query:String!):[Post!]!
     }
 
+    type Mutation{
+        createUser(name:String!,age:Int!,email:String!):User!,
+        createPost(name:String!,topic:String!,author:ID!):Post!,
+        createComment(text:String!,author:ID!,post:ID!):Comment!
+    }
+
     type User{
         id: ID!,
         name:String!,
+        email:String!,
         age:Int!,
         posts:[Post!]!,
         comments:[Comment!]!
@@ -141,7 +152,8 @@ const resolvers={
                 name:'rohit',
                 age:26,
                 employed:false,
-                gpa:null
+                gpa:null,
+                email:'test@gmail.com'
             }
         },
         post(){
@@ -150,6 +162,68 @@ const resolvers={
                 name:'How to GraphQL',
                 topic:'topic'
             }
+        }
+    },
+    Mutation:{
+        createUser(parent,args,ctx,info){
+            const emailTaken=users.some((user)=>{
+                return user.email===args.email
+            })
+            if(emailTaken){
+                throw new Error('the email is already taken')
+            }
+            const user={
+                id:uuidv4(),
+                name:args.name,
+                age:args.age,
+                email:args.email
+            }
+            users.push(user)
+
+            return user
+
+        },
+        createPost(parent,args,ctx,info){
+            const userExists=users.some((user)=>{
+                return user.id===args.author
+            })
+            if(!userExists){
+                throw new Error('the user does not exist')
+            }
+            const post={
+                id:uuidv4(),
+                name:args.name,
+                topic:args.topic,
+                author:args.author
+            }
+            posts.push(post)
+
+            return post
+
+        },
+        createComment(parent,args,ctx,info){
+            const userExists=users.some((user)=>{
+                return user.id===args.author
+            })
+            const postExists=posts.some((post)=>{
+                return post.id===args.post
+            })
+            if(!userExists){
+                throw new Error('the user does not exist')
+            }
+            if(!postExists){
+                throw new Error('the post does not exist')
+            }
+            const comment={
+                id:uuidv4(),
+                text:args.text,
+                post:args.post,
+                author:args.author
+            }
+            comments.push(comment)
+
+            return comment
+
         }
     },
     Post:{
