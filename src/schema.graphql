@@ -12,22 +12,36 @@ type Query{
     type Mutation{
         createUser(data:createUserInput!):User!,
         deleteUser(id:ID!):User!,
-        deletePost(id:ID!):Post!,
-        deleteComment(id:ID!):Comment!,
+        updateUser(id:ID!,data:updateUserInput!):User!,
         createPost(data:createPostInput!):Post!,
-        createComment(data:createCommentInput!):Comment!
+        deletePost(id:ID!):Post!,
+        updatePost(id:ID!,data:updatePostInput!):Post!,
+        createComment(data:createCommentInput!):Comment!,
+        deleteComment(id:ID!):Comment!
+        updateComment(id:ID!,data:updateCommentInput!):Comment!,
     }
 
     input createUserInput{
         name:String!,
-        age:Int!,
+        age:Int,
         email:String!
+    }
+
+    input updateUserInput{
+        name:String,
+        age:Int,
+        email:String
     }
     
     input createPostInput{
         name:String!,
         topic:String!,
         author:ID!
+    }
+
+    input updatePostInput{
+        name:String,
+        topic:String
     }
     
     input createCommentInput{
@@ -36,12 +50,16 @@ type Query{
         post:ID!
     } 
 
+    input updateCommentInput{
+        text:String,
+        author:ID
+    } 
 
     type User{
         id: ID!,
         name:String!,
         email:String!,
-        age:Int!,
+        age:Int,
         posts:[Post!]!,
         comments:[Comment!]!
     }
