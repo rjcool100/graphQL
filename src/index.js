@@ -1,7 +1,7 @@
 import {GraphQLServer} from 'graphql-yoga'
 import uuidv4 from 'uuid/v4'
 
-const posts=[{
+let posts=[{
     id:'1',
     name:'post1',
     topic:'topic1',
@@ -20,7 +20,7 @@ const posts=[{
     author:'1'    
 }]
 
-const users=[{
+let users=[{
     id:'1',
     name:'user1',
     email:'user1@gmail.com'
@@ -36,7 +36,7 @@ const users=[{
     email:'user3@gmail.com'
 }]
 
-const comments=[{
+let comments=[{
     id:'1',
     text:'comment1',
     author:'1',
@@ -74,10 +74,32 @@ const typeDefs=`
     }
 
     type Mutation{
-        createUser(name:String!,age:Int!,email:String!):User!,
-        createPost(name:String!,topic:String!,author:ID!):Post!,
-        createComment(text:String!,author:ID!,post:ID!):Comment!
+        createUser(data:createUserInput!):User!,
+        deleteUser(id:ID!):User!,
+        deletePost(id:ID!):Post!,
+        deleteComment(id:ID!):Comment!,
+        createPost(data:createPostInput!):Post!,
+        createComment(data:createCommentInput!):Comment!
     }
+
+    input createUserInput{
+        name:String!,
+        age:Int!,
+        email:String!
+    }
+    
+    input createPostInput{
+        name:String!,
+        topic:String!,
+        author:ID!
+    }
+    
+    input createCommentInput{
+        text:String!,
+        author:ID!,
+        post:ID!
+    } 
+
 
     type User{
         id: ID!,
@@ -167,34 +189,83 @@ const resolvers={
     Mutation:{
         createUser(parent,args,ctx,info){
             const emailTaken=users.some((user)=>{
-                return user.email===args.email
+                return user.email===args.data.email
             })
             if(emailTaken){
                 throw new Error('the email is already taken')
             }
             const user={
                 id:uuidv4(),
-                name:args.name,
-                age:args.age,
-                email:args.email
+                ...args.data
             }
             users.push(user)
 
             return user
 
         },
+        deleteUser(parent,args,ctx,info){
+            const userIndex=users.findIndex((user)=>{
+                return user.id===args.id
+            })
+            if(userIndex==-1){
+                throw new Error('the user does not exist')
+            }
+            var user=users.splice(userIndex,1)
+
+            posts=posts.filter((post)=>{
+                var match=post.author===args.id
+
+                if(match){
+                    comments=comments.filter((comment)=>{
+                        return comment.post!==post.id
+                    })
+                }
+                return !match
+            })
+
+            comments=comments.filter((comment)=>{
+                return comment.author!==args.id
+            })
+
+            return user[0]
+
+        },
+        deletePost(parent,args,ctx,info){
+            const postIndex=users.findIndex((post)=>{
+                return post.id===args.id
+            })
+            if(postIndex==-1){
+                throw new Error('the post does not exist')
+            }
+            var post=posts.splice(postIndex,1)
+
+           
+            comments=comments.filter((comment)=>{
+                return comment.post!==args.id
+            })
+            return post[0]
+
+        },
+        deleteComment(parent,args,ctx,info){
+            const commentIndex=users.findIndex((comment)=>{
+                return comment.id===args.id
+            })
+            if(commentIndex==-1){
+                throw new Error('the comment does not exist')
+            }
+            var comment=comments.splice(commentIndex,1)
+            return comment[0]
+        },
         createPost(parent,args,ctx,info){
             const userExists=users.some((user)=>{
-                return user.id===args.author
+                return user.id===args.data.author
             })
             if(!userExists){
                 throw new Error('the user does not exist')
             }
             const post={
                 id:uuidv4(),
-                name:args.name,
-                topic:args.topic,
-                author:args.author
+                ...args.data
             }
             posts.push(post)
 
@@ -203,10 +274,10 @@ const resolvers={
         },
         createComment(parent,args,ctx,info){
             const userExists=users.some((user)=>{
-                return user.id===args.author
+                return user.id===args.data.author
             })
             const postExists=posts.some((post)=>{
-                return post.id===args.post
+                return post.id===args.data.post
             })
             if(!userExists){
                 throw new Error('the user does not exist')
@@ -216,9 +287,7 @@ const resolvers={
             }
             const comment={
                 id:uuidv4(),
-                text:args.text,
-                post:args.post,
-                author:args.author
+                ...args.data
             }
             comments.push(comment)
 
