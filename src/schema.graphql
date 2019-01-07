@@ -21,6 +21,12 @@ type Query{
         updateComment(id:ID!,data:updateCommentInput!):Comment!,
     }
 
+    type Subscription{
+        count:Int!,
+        comment(id:ID!):CommmentSubsciptionPayload!,
+        post:PostSubsciptionPayload
+    }
+
     input createUserInput{
         name:String!,
         age:Int,
@@ -51,8 +57,7 @@ type Query{
     } 
 
     input updateCommentInput{
-        text:String,
-        author:ID
+        text:String
     } 
 
     type User{
@@ -77,4 +82,14 @@ type Query{
         text:String!,
         author:User!,
         post:Post!
+    }
+
+    type PostSubsciptionPayload{
+        mutation:String!,
+        data:Post
+    }
+
+    type CommmentSubsciptionPayload{
+        mutation:String!,
+        data:Comment
     }

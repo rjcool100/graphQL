@@ -72,7 +72,7 @@ const Mutation={
             throw new Error('the user does not exist')
         }
     },
-    createPost(parent,args,{db},info){
+    createPost(parent,args,{db,pubsub},info){
         const userExists= db.users.some((user)=>{
             return user.id===args.data.author
         })
@@ -84,22 +84,31 @@ const Mutation={
             ...args.data
         }
         db.posts.push(post)
-
+        var topic='posts';
+        pubsub.publish(topic,{post:{
+            mutation:'CREATED',
+            data:post
+        }})
         return post
 
     },
-    deletePost(parent,args,{db},info){
-        const postIndex= db.users.findIndex((post)=>{
+    deletePost(parent,args,{db,pubsub},info){
+        const postIndex= db.posts.findIndex((post)=>{
             return post.id===args.id
         })
         if(postIndex==-1){
             throw new Error('the post does not exist')
         }
-        var post= db.posts.splice(postIndex,1)
+        var [post]= db.posts.splice(postIndex,1)
         db.comments= db.comments.filter((comment)=>{
             return comment.post!==args.id
         })
-        return post[0]
+        var topic='posts';
+        pubsub.publish(topic,{post:{
+            mutation:'Deleted',
+            data:post
+        }})
+        return post
 
     },
     updatePost(parent,args,{db},info){
@@ -122,7 +131,7 @@ const Mutation={
             throw new Error('post not found')
         }
     },
-    createComment(parent,args,{db},info){
+    createComment(parent,args,{db,pubsub},info){
         const userExists= db.users.some((user)=>{
             return user.id===args.data.author
         })
@@ -140,6 +149,8 @@ const Mutation={
             ...args.data
         }
         db.comments.push(comment)
+        var topic=`comment ${args.data.post}`;
+        pubsub.publish(topic,{comment})
         return comment
     },
     deleteComment(parent,args,{db},info){
